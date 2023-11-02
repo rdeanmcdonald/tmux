@@ -4,7 +4,7 @@
 
 set_wd() {
   # exit 0 so on `esc` the popup just closes gracefully
-  full_path=$(find ~/wise -type d -maxdepth 1 | fzf) || exit 0
+  full_path=$(find ~/wise ~/random ~/.config -type d -maxdepth 1 | fzf) || exit 0
   session_name="$(basename "$full_path" | tr . -)"
 }
 
