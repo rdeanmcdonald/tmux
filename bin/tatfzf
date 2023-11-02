@@ -2,7 +2,7 @@
 #
 # Use FZF to select a project and create a new tmux session for it
 
-set_wd() {
+get_project() {
   # exit 0 so on `esc` the popup just closes gracefully
   full_path=$(find ~/wise ~/random ~/.config -type d -maxdepth 1 | fzf) || exit 0
   session_name="$(basename "$full_path" | tr . -)"
@@ -17,11 +17,12 @@ session_exists() {
 }
 
 create_detached_session() {
-  (TMUX='' tmux new-session -Ad -s "$session_name" -n "nvim" -c $full_path)
+  TMUX='' tmux new-session -Ad -s "$session_name" -n "nvim" -c $full_path
+  TMUX='' tmux new-window -d -n "zsh"
 }
 
 create_if_needed_and_attach() {
-  set_wd
+  get_project
   if not_in_tmux; then
     tmux new-session -As "$session_name" -n "nvim" -c $full_path
   else
