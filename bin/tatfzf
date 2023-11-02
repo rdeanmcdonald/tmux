@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Use FZF to select a project and create a new tmux session for it
+
+set_wd() {
+  # exit 0 so on `esc` the popup just closes gracefully
+  full_path=$(find ~/wise -type d -maxdepth 1 | fzf) || exit 0
+  session_name="$(basename "$full_path" | tr . -)"
+}
+
+not_in_tmux() {
+  [ -z "$TMUX" ]
+}
+
+session_exists() {
+  tmux has-session -t "=$session_name"
+}
+
+create_detached_session() {
+  (TMUX='' tmux new-session -Ad -s "$session_name" -n "nvim" -c $full_path)
+}
+
+create_if_needed_and_attach() {
+  set_wd
+  if not_in_tmux; then
+    tmux new-session -As "$session_name" -n "nvim" -c $full_path
+  else
+    if ! session_exists; then
+      create_detached_session
+    fi
+    tmux switch-client -t "$session_name"
+  fi
+}
+
+create_if_needed_and_attach
