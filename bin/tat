@@ -1,31 +1,11 @@
 #!/bin/sh
 #
-# Attach or create tmux session named the same as current directory.
-# Mostly from here: https://github.com/thoughtbot/dotfiles
+# Use FZF to select a project and create a new tmux session for it
 
-if [[ ! -z "$1" ]]; then
-  if [ -d "$1" ]; then
-    cd $1
-  else
-    echo "Directory doesn't exist $1"
-    exit 1
-  fi
-fi
-
-path_name="$(basename "$PWD" | tr . -)"
-session_name="$path_name"
-
-tmx () {
-    # Use -d to allow the rest of the function to run
-    tmux new-session -d -s SessionName
-    tmux new-window -n Win1
-    # -d to prevent current window from changing
-    tmux new-window -d -n Win2
-    tmux new-window -d -n Win3
-    tmux new-window -d -n Win4
-    # -d to detach any other client (which there shouldn't be,
-    # since you just created the session).
-    tmux attach-session -d -t SessionName
+get_project() {
+  # exit 0 so on `esc` the popup just closes gracefully
+  full_path=$(find ~/wise ~/random ~/.config -type d -maxdepth 1 | fzf) || exit 0
+  session_name="$(basename "$full_path" | tr . -)"
 }
 
 not_in_tmux() {
@@ -37,16 +17,18 @@ session_exists() {
 }
 
 create_detached_session() {
-  (TMUX='' tmux new-session -Ad -s "$session_name" -n "nvim")
+  TMUX='' tmux new-session -Ad -s "$session_name" -n "nvim" -c $full_path
+  TMUX='' tmux new-window -d -n "zsh" -c $full_path
 }
 
 create_if_needed_and_attach() {
+  get_project
+  if ! session_exists; then
+    create_detached_session
+  fi
   if not_in_tmux; then
-    tmux new-session -As "$session_name" -n "nvim"
+    tmux attach-session -t "$session_name"
   else
-    if ! session_exists; then
-      create_detached_session
-    fi
     tmux switch-client -t "$session_name"
   fi
 }
